@@ -1,0 +1,177 @@
+{
+    "ultimo_aggiornamento": "15/09/2026 21:41",
+    "storico_mesi": {
+        "2025-09": {
+            "media_pun_attuale": 0.1122,
+            "media_psv_attuale": 0.3734,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1122
+            ],
+            "psv_giornaliero": [
+                0.3734
+            ]
+        },
+        "2025-10": {
+            "media_pun_attuale": 0.1245,
+            "media_psv_attuale": 0.3537,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1245
+            ],
+            "psv_giornaliero": [
+                0.3537
+            ]
+        },
+        "2025-11": {
+            "media_pun_attuale": 0.11,
+            "media_psv_attuale": 0.3487,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.11
+            ],
+            "psv_giornaliero": [
+                0.3487
+            ]
+        },
+        "2025-12": {
+            "media_pun_attuale": 0.1099,
+            "media_psv_attuale": 0.328,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1099
+            ],
+            "psv_giornaliero": [
+                0.328
+            ]
+        },
+        "2026-01": {
+            "media_pun_attuale": 0.1318,
+            "media_psv_attuale": 0.4039,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1318
+            ],
+            "psv_giornaliero": [
+                0.4039
+            ]
+        },
+        "2026-02": {
+            "media_pun_attuale": 0.107,
+            "media_psv_attuale": 0.3768,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.107
+            ],
+            "psv_giornaliero": [
+                0.3768
+            ]
+        },
+        "2026-03": {
+            "media_pun_attuale": 0.156,
+            "media_psv_attuale": 0.582,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.156
+            ],
+            "psv_giornaliero": [
+                0.582
+            ]
+        },
+        "2026-04": {
+            "media_pun_attuale": 0.1058,
+            "media_psv_attuale": 0.497,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1058
+            ],
+            "psv_giornaliero": [
+                0.497
+            ]
+        },
+        "2026-05": {
+            "media_pun_attuale": 0.1096,
+            "media_psv_attuale": 0.521,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1096
+            ],
+            "psv_giornaliero": [
+                0.521
+            ]
+        },
+        "2026-06": {
+            "media_pun_attuale": 0.1531,
+            "media_psv_attuale": 0.507,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1531
+            ],
+            "psv_giornaliero": [
+                0.507
+            ]
+        },
+        "2026-07": {
+            "media_pun_attuale": 0.1862,
+            "media_psv_attuale": 0.515,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.1862
+            ],
+            "psv_giornaliero": [
+                0.515
+            ]
+        },
+        "2026-08": {
+            "media_pun_attuale": 0.18,
+            "media_psv_attuale": 0.51,
+            "giorni": [
+                "01"
+            ],
+            "pun_giornaliero": [
+                0.18
+            ],
+            "psv_giornaliero": [
+                0.51
+            ]
+        },
+        "2026-09": {
+            "giorni": [
+                "14",
+                "15"
+            ],
+            "pun_giornaliero": [
+                0.2257,
+                0.2117
+            ],
+            "psv_giornaliero": [
+                0.879,
+                0.907
+            ],
+            "media_pun_attuale": 0.2187,
+            "media_psv_attuale": 0.893
+        }
+    }
+}

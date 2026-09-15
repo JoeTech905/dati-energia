@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Energia - PUN & PSV</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --accent-color: #0066cc;
+            --border-color: #dee2e6;
+            --table-header-bg: #e9ecef;
+            --btn-bg: #e2e6ea;
+            --btn-text: #333333;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent-color: #4dabf7;
+            --border-color: #333333;
+            --table-header-bg: #2c2c2c;
+            --btn-bg: #2d2d2d;
+            --btn-text: #f0f0f0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        h1 { font-size: 1.5rem; margin: 0; }
+
+        .btn-theme {
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin: 0;
+            color: var(--accent-color);
+        }
+
+        .select-view {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .update-info { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .metric-box {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-value { font-size: 1.4rem; font-weight: bold; margin-top: 5px; }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            margin-top: 10px;
+        }
+
+        .table-responsive { overflow-x: auto; max-height: 300px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: var(--table-header-bg); font-weight: bold; position: sticky; top: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Monitoraggio Energia (PUN & PSV)</h1>
+            <button id="theme-toggle" class="btn-theme">🌙 Modalità Scura</button>
+        </header>
+
+        <div class="card">
+            <h2>Medie Mensili Correnti</h2>
+            <div class="update-info" id="last-update">Ultimo aggiornamento: Caricamento...</div>
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <div>Media PUN (Luce)</div>
+                    <div class="metric-value" id="media-pun">- €/kWh</div>
+                </div>
+                <div class="metric-box">
+                    <div>Media PSV (Gas)</div>
+                    <div class="metric-value" id="media-psv">- €/Smc</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header-flex">
+                <h2>Andamento Storico (PUN & PSV)</h2>
+                <!-- Impostato 'mensile' come valore predefinito -->
+                <select id="storico-view-select" class="select-view">
+                    <option value="mensile" selected>Vista: Medie Mensili</option>
+                    <option value="giornaliero">Vista: Dettaglio Giornaliero</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="historicalLineChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Valori Giornalieri Mese Corrente - PUN (€/kWh)</h2>
+            <div class="chart-container"><canvas id="punBarChart"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2>Valori Giornalieri Mese Corrente - PSV (€/Smc)</h2>
+            <div class="chart-container"><canvas id="psvBarChart"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2>Dettaglio Tabellare Mese Corrente</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Giorno</th>
+                            <th>PUN (€/kWh)</th>
+                            <th>PSV (€/Smc)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="3" style="text-align: center;">Caricamento...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let punBarInstance = null;
+        let psvBarInstance = null;
+        let lineInstance = null;
+
+        const toggleButton = document.getElementById('theme-toggle');
+        const viewSelect = document.getElementById('storico-view-select');
+        const bodyElement = document.body;
+
+        if (localStorage.getItem('theme') === 'dark') {
+            bodyElement.classList.add('dark-mode');
+            toggleButton.textContent = '☀️ Modalità Chiara';
+        }
+
+        toggleButton.addEventListener('click', () => {
+            bodyElement.classList.toggle('dark-mode');
+            const isDark = bodyElement.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            toggleButton.textContent = isDark ? '☀️ Modalità Chiara' : '🌙 Modalità Scura';
+            if (window.cachedFullData) aggiornaDashboard(window.cachedFullData);
+        });
+
+        viewSelect.addEventListener('change', () => {
+            if (window.cachedFullData) aggiornaDashboard(window.cachedFullData);
+        });
+
+        async function caricaDati() {
+            try {
+                const res = await fetch('dati_energia_daily.json?t=' + new Date().getTime());
+                if (!res.ok) throw new Error('Errore caricamento dati');
+                const data = await res.json();
+                window.cachedFullData = data;
+                aggiornaDashboard(data);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('last-update').textContent = 'Errore nel recupero dello storico.';
+            }
+        }
+
+        function aggiornaDashboard(data) {
+            document.getElementById('last-update').textContent = `Ultimo aggiornamento: ${data.ultimo_aggiornamento || 'N/D'}`;
+            
+            const isDark = bodyElement.classList.contains('dark-mode');
+            const textColor = isDark ? '#a0a0a0' : '#6c757d';
+            const gridColor = isDark ? '#2a2a2a' : '#e9ecef';
+
+            const storicoMesi = data.storico_mesi || {};
+            const mesiKeys = Object.keys(storicoMesi).sort();
+            if (mesiKeys.length === 0) return;
+
+            const chiaveMeseCorrente = mesiKeys[mesiKeys.length - 1];
+            const meseCorrente = storicoMesi[chiaveMeseCorrente];
+
+            let mediaPun = meseCorrente.media_pun_attuale;
+            let mediaPsv = meseCorrente.media_psv_attuale;
+
+            const punArr = meseCorrente.pun_giornaliero || [];
+            const psvArr = meseCorrente.psv_giornaliero || [];
+
+            if ((mediaPun === undefined || isNaN(mediaPun)) && punArr.length > 0) {
+                mediaPun = punArr.reduce((a, b) => a + b, 0) / punArr.length;
+            }
+            if ((mediaPsv === undefined || isNaN(mediaPsv)) && psvArr.length > 0) {
+                mediaPsv = psvArr.reduce((a, b) => a + b, 0) / psvArr.length;
+            }
+
+            if (mediaPun !== undefined && !isNaN(mediaPun)) {
+                document.getElementById('media-pun').textContent = `${mediaPun.toFixed(4)} €/kWh`;
+            }
+            if (mediaPsv !== undefined && !isNaN(mediaPsv)) {
+                document.getElementById('media-psv').textContent = `${mediaPsv.toFixed(4)} €/Smc`;
+            }
+
+            // --- 1. STORICO ANNUALE (Con selettore Giornaliero / Mensile) ---
+            let labelsAnno = [];
+            let datiPunAnno = [];
+            let datiPsvAnno = [];
+            const tipoVista = viewSelect.value;
+
+            if (tipoVista === 'mensile') {
+                mesiKeys.forEach(chiave => {
+                    const m = storicoMesi[chiave];
+                    const pArr = m.pun_giornaliero || [];
+                    const sArr = m.psv_giornaliero || [];
+                    
+                    if (pArr.length > 0) {
+                        const mPun = pArr.reduce((a, b) => a + b, 0) / pArr.length;
+                        const mPsv = sArr.length > 0 ? sArr.reduce((a, b) => a + b, 0) / sArr.length : 0;
+                        
+                        const [anno, mese] = chiave.split('-');
+                        labelsAnno.push(`${mese}/${anno}`);
+                        datiPunAnno.push(Number(mPun.toFixed(4)));
+                        datiPsvAnno.push(Number(mPsv.toFixed(4)));
+                    }
+                });
+            } else {
+                mesiKeys.forEach(chiave => {
+                    const m = storicoMesi[chiave];
+                    if (m.giorni && m.pun_giornaliero) {
+                        m.giorni.forEach((g, idx) => {
+                            labelsAnno.push(`${g}/${chiave.split('-')[1]}`);
+                            datiPunAnno.push(m.pun_giornaliero[idx]);
+                            datiPsvAnno.push(m.psv_giornaliero[idx]);
+                        });
+                    }
+                });
+            }
+
+            if (lineInstance) lineInstance.destroy();
+            const ctxLine = document.getElementById('historicalLineChart').getContext('2d');
+            lineInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: labelsAnno,
+                    datasets: [
+                        { label: 'PUN (€/kWh)', data: datiPunAnno, borderColor: '#0066cc', borderWidth: 2, tension: 0.2, yAxisID: 'y' },
+                        { label: 'PSV (€/Smc)', data: datiPsvAnno, borderColor: '#e67e22', borderWidth: 2, tension: 0.2, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        x: { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: tipoVista === 'mensile' ? 12 : 15 } },
+                        y: { type: 'linear', position: 'left', grid: { color: gridColor }, ticks: { color: textColor } },
+                        y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { color: textColor } }
+                    }
+                }
+            });
+
+            // --- 2. GRAFICI A BARRE MESE CORRENTE ---
+            const giorniCorrenti = meseCorrente.giorni || [];
+
+            if (punBarInstance) punBarInstance.destroy();
+            const ctxPunBar = document.getElementById('punBarChart').getContext('2d');
+            punBarInstance = new Chart(ctxPunBar, {
+                type: 'bar',
+                data: {
+                    labels: giorniCorrenti,
+                    datasets: [{ label: 'PUN', data: punArr, backgroundColor: 'rgba(0, 102, 204, 0.7)', borderRadius: 4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: gridColor }, ticks: { color: textColor } }, y: { grid: { color: gridColor }, ticks: { color: textColor } } }
+                }
+            });
+
+            if (psvBarInstance) psvBarInstance.destroy();
+            const ctxPsvBar = document.getElementById('psvBarChart').getContext('2d');
+            psvBarInstance = new Chart(ctxPsvBar, {
+                type: 'bar',
+                data: {
+                    labels: giorniCorrenti,
+                    datasets: [{ label: 'PSV', data: psvArr, backgroundColor: 'rgba(230, 126, 34, 0.7)', borderRadius: 4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: gridColor }, ticks: { color: textColor } }, y: { grid: { color: gridColor }, ticks: { color: textColor } } }
+                }
+            });
+
+            // --- 3. TABELLA MESE CORRENTE ---
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+            if (giorniCorrenti.length > 0) {
+                for (let i = giorniCorrenti.length - 1; i >= 0; i--) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${giorniCorrenti[i]}</td>
+                                    <td>${punArr[i] !== undefined ? punArr[i].toFixed(4) : '-'}</td>
+                                    <td>${psvArr[i] !== undefined ? psvArr[i].toFixed(4) : '-'}</td>`;
+                    tableBody.appendChild(tr);
+                }
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nessun dato registrato per questo mese.</td></tr>';
+            }
+        }
+
+        caricaDati();
+    </script>
+</body>
+</html>
