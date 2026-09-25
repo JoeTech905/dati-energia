@@ -1,0 +1,15 @@
+{
+  "name": "Confronto Luce e Gas",
+  "short_name": "LuceGas",
+  "start_url": "./confronto tariffe energia.html",
+  "display": "standalone",
+  "background_color": "#f4fbfb",
+  "theme_color": "#006874",
+  "icons": [
+    {
+      "src": "icona1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
