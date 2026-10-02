@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Confronto Luce & Gas</title>
+<!-- INSERISCI QUI IL LINK AL MANIFEST -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --primary: #006874;
+            --primary-container: #9ff0ff;
+            --on-primary-container: #002024;
+            --background: #f4fbfb;
+            --surface: #ffffff;
+            --surface-variant: #e6eef0;
+            --on-surface: #191c1d;
+            --on-surface-variant: #3f484a;
+            --outline: #6f797b;
+            --success: #006b5b;
+            --success-container: #79f8e5;
+            --error: #ba1a1a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--on-surface);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            color: var(--primary);
+        }
+
+        .update-banner {
+            background-color: var(--primary-container);
+            color: var(--on-primary-container);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .update-banner button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--surface-variant);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            color: var(--on-surface-variant);
+        }
+
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 10px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--on-surface-variant);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--outline);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            background: var(--surface);
+            color: var(--on-surface);
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary);
+            border-width: 2px;
+        }
+
+        .row-inputs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .row-inputs .input-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .btn-secondary {
+            background-color: var(--surface-variant);
+            color: var(--on-surface-variant);
+        }
+
+        .btn-pdf {
+            background-color: var(--success);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .results-container {
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background-color: var(--surface);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 6px solid var(--outline);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .result-card.best {
+            border-left-color: var(--success);
+            background-color: var(--background);
+        }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .result-details {
+            font-size: 0.82rem;
+            color: var(--on-surface-variant);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .result-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .badge-best {
+            display: inline-block;
+            background-color: var(--success-container);
+            color: var(--on-primary-container);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .offer-box {
+            background: var(--surface-variant);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #d0dcdc;
+        }
+
+        .offer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .offer-header-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .btn-delete {
+            background: var(--error);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                color: black;
+                padding: 0;
+            }
+            .update-banner, .tabs, .card:not(.print-keep), .btn, .btn-delete, .offer-header {
+                display: none !important;
+            }
+            .section {
+                display: block !important;
+            }
+            .result-card {
+                border: 1px solid #ccc;
+                box-shadow: none;
+                break-inside: avoid;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ Confronto Luce & Gas 🛢️</h1>
+    </header>
+
+    <div class="update-banner">
+        <span id="update-banner-text">Indici da dati_energia_daily.json</span>
+        <button onclick="aggiornaIndiciWeb()">Aggiorna Ora</button>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('luce')">Luce</div>
+        <div class="tab" onclick="switchTab('gas')">Gas</div>
+    </div>
+
+    <!-- SEZIONE LUCE -->
+    <div id="luce-section" class="section active">
+        <div class="card">
+            <h2>I tuoi consumi Luce</h2>
+            <div class="input-group" style="margin-bottom: 12px;">
+                <label>Tipologia Oraria Contatore</label>
+                <select id="luce-modalita" onchange="toggleLuceModalita()">
+                    <option value="multiorario">Multiorario (F1, F2, F3)</option>
+                    <option value="monorario">Monorario (Unico Consumo)</option>
+                </select>
+            </div>
+
+            <div id="luce-consumi-container"></div>
+
+            <div class="input-group" style="margin-top: 10px;">
+                <label>Spesa Annua Attuale (€) - Opzionale</label>
+                <input type="number" id="luce-attuale" placeholder="es. 750">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Offerte Luce da Confrontare</h2>
+            <div id="luce-offerte-list"></div>
+            <button class="btn btn-secondary" onclick="addOffer('luce')">+ Aggiungi Offerta Luce</button>
+        </div>
+
+        <button class="btn" onclick="calcola('luce')">Confronta Offerte Luce</button>
+        <button class="btn btn-pdf" id="luce-btn-pdf" onclick="esportaPDF()">📄 Esporta Risultati in PDF</button>
+        <div id="luce-results" class="results-container"></div>
+    </div>
+
+    <!-- SEZIONE GAS -->
+    <div id="gas-section" class="section">
+        <div class="card">
+            <h2>I tuoi consumi Gas (Smc)</h2>
+            <div class="input-group">
+                <label>Consumo Annuo Totale (Smc)</label>
+                <input type="number" id="gas-consumo" value="1400">
+            </div>
+            <div class="input-group" style="margin-top: 10px;">
+                <label>Spesa Annua Attuale (€) - Opzionale</label>
+                <input type="number" id="gas-attuale" placeholder="es. 1200">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Offerte Gas da Confrontare</h2>
+            <div id="gas-offerte-list"></div>
+            <button class="btn btn-secondary" onclick="addOffer('gas')">+ Aggiungi Offerta Gas</button>
+        </div>
+
+        <button class="btn" onclick="calcola('gas')">Confronta Offerte Gas</button>
+        <button class="btn btn-pdf" id="gas-btn-pdf" onclick="esportaPDF()">📄 Esporta Risultati in PDF</button>
+        <div id="gas-results" class="results-container"></div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            if(tabName === 'luce') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('luce-section').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('gas-section').classList.add('active');
+            }
+            document.getElementById('luce-btn-pdf').style.display = 'none';
+            document.getElementById('gas-btn-pdf').style.display = 'none';
+        }
+
+        const offerteIniziali = {
+            luce: [
+                { nome: "Offerta Fissa Esempio", tipo: "fisso", p1: 0.145, p2: 0.135, p3: 0.125, quota: 144 },
+                { nome: "Offerta Variabile PUN", tipo: "variabile", stimaIndice: 0.2187, spread: 0.02, quota: 120 }
+            ],
+            gas: [
+                { nome: "Gas Fisso Esempio", tipo: "fisso", p1: 0.55, quota: 144 },
+                { nome: "Gas Variabile PSV", tipo: "variabile", stimaIndice: 0.893, spread: 0.05, quota: 96 }
+            ]
+        };
+
+        function toggleLuceModalita() {
+            const modalita = document.getElementById('luce-modalita').value;
+            const container = document.getElementById('luce-consumi-container');
+            
+            if (modalita === 'monorario') {
+                container.innerHTML = `
+                    <div class="input-group">
+                        <label>Consumo Totale Annuo (kWh)</label>
+                        <input type="number" id="luce-mono-totale" value="2700">
+                    </div>`;
+            } else {
+                container.innerHTML = `
+                    <div class="row-inputs">
+                        <div class="input-group"><label>Fascia F1</label><input type="number" id="luce-f1" value="900"></div>
+                        <div class="input-group"><label>Fascia F2</label><input type="number" id="luce-f2" value="900"></div>
+                        <div class="input-group"><label>Fascia F3</label><input type="number" id="luce-f3" value="900"></div>
+                    </div>`;
+            }
+
+            document.querySelectorAll('#luce-offerte-list .offer-box').forEach(box => {
+                const tipoOfferta = box.querySelector('.off-tipo').value;
+                if (tipoOfferta === 'fisso') {
+                    const dynContainer = box.querySelector('.dynamic-fields');
+                    if (modalita === 'monorario') {
+                        dynContainer.innerHTML = `
+                            <div class="input-group"><label>Prezzo Unico (€/kWh)</label><input type="number" step="0.001" class="off-p1" value="0.135"></div>`;
+                    } else {
+                        dynContainer.innerHTML = `
+                            <div class="row-inputs">
+                                <div class="input-group"><label>F1 (€/kWh)</label><input type="number" step="0.001" class="off-p1" value="0.145"></div>
+                                <div class="input-group"><label>F2 (€/kWh)</label><input type="number" step="0.001" class="off-p2" value="0.135"></div>
+                                <div class="input-group"><label>F3 (€/kWh)</label><input type="number" step="0.001" class="off-p3" value="0.125"></div>
+                            </div>`;
+                    }
+                }
+            });
+        }
+
+        function initOffers() {
+            toggleLuceModalita();
+            ['luce', 'gas'].forEach(type => {
+                const container = document.getElementById(`${type}-offerte-list`);
+                container.innerHTML = '';
+                offerteIniziali[type].forEach(o => {
+                    appendOfferBox(type, o);
+                });
+            });
+        }
+
+        async function aggiornaIndiciWeb() {
+            const btn = document.querySelector('.update-banner button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Aggiornamento...';
+            btn.disabled = true;
+
+            try {
+                // Legge il file JSON con timestamp anti-cache per evitare problemi su GitHub Pages
+                const response = await fetch('../dati_energia_daily.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error('File JSON non trovato');
+                
+                const data = await response.json();
+                
+                // Naviga nella struttura corretta: "storico_mesi" -> ultimo mese disponibile
+                if (!data.storico_mesi) throw new Error('Struttura JSON non valida: manca storico_mesi');
+                
+                const mesiDisponibili = Object.keys(data.storico_mesi);
+                if (mesiDisponibili.length === 0) throw new Error('Nessun mese trovato nel JSON');
+                
+                // Prende l'ultimo mese (es. "2026-09")
+                const ultimoMese = mesiDisponibili[mesiDisponibili.length - 1];
+                const datiMese = data.storico_mesi[ultimoMese];
+                
+                const nuovoPun = datiMese.media_pun_attuale; 
+                const nuovoPsv = datiMese.media_psv_attuale;
+
+                if (nuovoPun !== undefined && nuovoPsv !== undefined) {
+                    document.querySelectorAll('.offer-box').forEach(box => {
+                        const tipo = box.querySelector('.off-tipo').value;
+                        if (tipo === 'variabile') {
+                            const inputIndice = box.querySelector('.off-indice');
+                            if (inputIndice) {
+                                if (box.closest('#luce-offerte-list')) {
+                                    inputIndice.value = nuovoPun;
+                                } else {
+                                    inputIndice.value = nuovoPsv;
+                                }
+                            }
+                        }
+                    });
+                    
+                    document.getElementById('update-banner-text').innerText = `Aggiornato (Mese: ${ultimoMese})`;
+                    alert(`Indici aggiornati correttamente dal mese ${ultimoMese}!\nPUN: ${nuovoPun} | PSV: ${nuovoPsv}`);
+                } else {
+                    throw new Error('Campi media non trovati nel mese');
+                }
+
+            } catch (e) {
+                console.error(e);
+                alert('Impossibile leggere il file JSON o struttura non compatibile. Verificati i valori predefiniti.');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function appendOfferBox(type, data = {}) {
+            const container = document.getElementById(`${type}-offerte-list`);
+            const box = document.createElement('div');
+            box.className = 'offer-box';
+            
+            const nome = data.nome || 'Nuova Offerta';
+            const tipo = data.tipo || 'fisso';
+            const quota = data.quota !== undefined ? data.quota : 144;
+            const spread = data.spread !== undefined ? data.spread : 0.02;
+            const stimaIndice = data.stimaIndice !== undefined ? data.stimaIndice : (type === 'luce' ? 0.2187 : 0.893);
+            const p1 = data.p1 !== undefined ? data.p1 : (type === 'luce' ? 0.145 : 0.55);
+            const p2 = data.p2 !== undefined ? data.p2 : 0.135;
+            const p3 = data.p3 !== undefined ? data.p3 : 0.125;
+
+            let specificFieldsHtml = '';
+            if (type === 'luce') {
+                const modalitaLuce = document.getElementById('luce-modalita').value;
+                if (tipo === 'fisso') {
+                    if (modalitaLuce === 'monorario') {
+                        specificFieldsHtml = `
+                            <div class="input-group"><label>Prezzo Unico (€/kWh)</label><input type="number" step="0.001" class="off-p1" value="${p1}"></div>`;
+                    } else {
+                        specificFieldsHtml = `
+                            <div class="row-inputs">
+                                <div class="input-group"><label>F1 (€/kWh)</label><input type="number" step="0.001" class="off-p1" value="${p1}"></div>
+                                <div class="input-group"><label>F2 (€/kWh)</label><input type="number" step="0.001" class="off-p2" value="${p2}"></div>
+                                <div class="input-group"><label>F3 (€/kWh)</label><input type="number" step="0.001" class="off-p3" value="${p3}"></div>
+                            </div>`;
+                    }
+                } else {
+                    specificFieldsHtml = `
+                        <div class="row-inputs">
+                            <div class="input-group"><label>Stima PUN</label><input type="number" step="0.0001" class="off-indice" value="${stimaIndice}"></div>
+                            <div class="input-group"><label>Spread (+€)</label><input type="number" step="0.0001" class="off-spread" value="${spread}"></div>
+                        </div>`;
+                }
+            } else {
+                if (tipo === 'fisso') {
+                    specificFieldsHtml = `
+                        <div class="input-group"><label>Prezzo Fisso (€/Smc)</label><input type="number" step="0.001" class="off-p1" value="${p1}"></div>`;
+                } else {
+                    specificFieldsHtml = `
+                        <div class="row-inputs">
+                            <div class="input-group"><label>Stima PSV</label><input type="number" step="0.0001" class="off-indice" value="${stimaIndice}"></div>
+                            <div class="input-group"><label>Spread (+€)</label><input type="number" step="0.0001" class="off-spread" value="${spread}"></div>
+                        </div>`;
+                }
+            }
+
+            box.innerHTML = `
+                <div class="offer-header">
+                    <span class="offer-header-title">Configura Offerta</span>
+                    <button class="btn-delete" onclick="this.closest('.offer-box').remove()">Elimina</button>
+                </div>
+                <div class="input-group">
+                    <label>Nome Gestore / Offerta</label>
+                    <input type="text" class="off-nome" value="${nome}" placeholder="es. Enel, Edison, Hera...">
+                </div>
+                <div class="row-inputs" style="margin-top: 10px;">
+                    <div class="input-group">
+                        <label>Tipologia</label>
+                        <select class="off-tipo" onchange="updateOfferBoxType(this, '${type}')">
+                            <option value="fisso" ${tipo === 'fisso' ? 'selected' : ''}>Prezzo Fisso</option>
+                            <option value="variabile" ${tipo === 'variabile' ? 'selected' : ''}>Variabile</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Quota Fissa (€/anno)</label>
+                        <input type="number" class="off-quota" value="${quota}">
+                    </div>
+                </div>
+                <div class="dynamic-fields" style="margin-top: 10px;">${specificFieldsHtml}</div>
+            `;
+            container.appendChild(box);
+        }
+
+        function updateOfferBoxType(selectElem, type) {
+            const box = selectElem.closest('.offer-box');
+            const tipo = selectElem.value;
+            const dynamicContainer = box.querySelector('.dynamic-fields');
+            
+            if (type === 'luce') {
+                const modalitaLuce = document.getElementById('luce-modalita').value;
+                if (tipo === 'fisso') {
+                    if (modalitaLuce === 'monorario') {
+                        dynamicContainer.innerHTML = `
+                            <div class="input-group"><label>Prezzo Unico (€/kWh)</label><input type="number" step="0.001" class="off-p1" value="0.135"></div>`;
+                    } else {
+                        dynamicContainer.innerHTML = `
+                            <div class="row-inputs">
+                                <div class="input-group"><label>F1 (€/kWh)</label><input type="number" step="0.001" class="off-p1" value="0.145"></div>
+                                <div class="input-group"><label>F2 (€/kWh)</label><input type="number" step="0.001" class="off-p2" value="0.135"></div>
+                                <div class="input-group"><label>F3 (€/kWh)</label><input type="number" step="0.001" class="off-p3" value="0.125"></div>
+                            </div>`;
+                    }
+                } else {
+                    dynamicContainer.innerHTML = `
+                        <div class="row-inputs">
+                            <div class="input-group"><label>Stima PUN</label><input type="number" step="0.0001" class="off-indice" value="0.2187"></div>
+                            <div class="input-group"><label>Spread (+€)</label><input type="number" step="0.0001" class="off-spread" value="0.020"></div>
+                        </div>`;
+                }
+            } else {
+                if (tipo === 'fisso') {
+                    dynamicContainer.innerHTML = `
+                        <div class="input-group"><label>Prezzo Fisso (€/Smc)</label><input type="number" step="0.001" class="off-p1" value="0.550"></div>`;
+                } else {
+                    dynamicContainer.innerHTML = `
+                        <div class="row-inputs">
+                            <div class="input-group"><label>Stima PSV</label><input type="number" step="0.0001" class="off-indice" value="0.893"></div>
+                            <div class="input-group"><label>Spread (+€)</label><input type="number" step="0.0001" class="off-spread" value="0.050"></div>
+                        </div>`;
+                }
+            }
+        }
+
+        function addOffer(type) {
+            appendOfferBox(type, { tipo: 'fisso', nome: 'Nuova Offerta' });
+        }
+
+        function calcola(type) {
+            const resultsContainer = document.getElementById(`${type}-results`);
+            resultsContainer.innerHTML = '';
+            const boxes = document.querySelectorAll(`#${type}-offerte-list .offer-box`);
+
+            if (boxes.length === 0) {
+                resultsContainer.innerHTML = '<div class="card">Aggiungi almeno un’offerta da confrontare.</div>';
+                document.getElementById(`${type}-btn-pdf`).style.display = 'none';
+                return;
+            }
+
+            let offerteList = [];
+
+            if (type === 'luce') {
+                const modalita = document.getElementById('luce-modalita').value;
+                const spesaAttuale = parseFloat(document.getElementById('luce-attuale').value) || 0;
+                
+                let totaleConsumoKwh = 0;
+                let consumoRealeF1 = 0, consumoRealeF2 = 0, consumoRealeF3 = 0;
+
+                if (modalita === 'monorario') {
+                    totaleConsumoKwh = parseFloat(document.getElementById('luce-mono-totale').value) || 0;
+                    consumoRealeF1 = totaleConsumoKwh * 1.10;
+                } else {
+                    const f1 = parseFloat(document.getElementById('luce-f1').value) || 0;
+                    const f2 = parseFloat(document.getElementById('luce-f2').value) || 0;
+                    const f3 = parseFloat(document.getElementById('luce-f3').value) || 0;
+                    consumoRealeF1 = f1 * 1.10;
+                    consumoRealeF2 = f2 * 1.10;
+                    consumoRealeF3 = f3 * 1.10;
+                    totaleConsumoKwh = consumoRealeF1 + consumoRealeF2 + consumoRealeF3;
+                }
+
+                const oneriTrasportoStima = totaleConsumoKwh * 0.085;
+
+                boxes.forEach(box => {
+                    const nome = box.querySelector('.off-nome').value || "Offerta Luce";
+                    const tipo = box.querySelector('.off-tipo').value;
+                    const quotaFissa = parseFloat(box.querySelector('.off-quota').value) || 0;
+
+                    let costoMateriaPrima = 0;
+                    let dettaglioPrezzo = "";
+
+                    if (tipo === 'fisso') {
+                        if (modalita === 'monorario') {
+                            const p1 = parseFloat(box.querySelector('.off-p1').value) || 0;
+                            costoMateriaPrima = consumoRealeF1 * p1;
+                            dettaglioPrezzo = `Monorario Fisso: ${p1} €/kWh`;
+                        } else {
+                            const p1 = parseFloat(box.querySelector('.off-p1').value) || 0;
+                            const p2 = parseFloat(box.querySelector('.off-p2').value) || 0;
+                            const p3 = parseFloat(box.querySelector('.off-p3').value) || 0;
+                            costoMateriaPrima = (consumoRealeF1 * p1) + (consumoRealeF2 * p2) + (consumoRealeF3 * p3);
+                            dettaglioPrezzo = `Fisso: F1=${p1}, F2=${p2}, F3=${p3} €/kWh`;
+                        }
+                    } else {
+                        const indice = parseFloat(box.querySelector('.off-indice').value) || 0;
+                        const spread = parseFloat(box.querySelector('.off-spread').value) || 0;
+                        const prezzoFinaleVariabile = indice + spread;
+                        costoMateriaPrima = totaleConsumoKwh * prezzoFinaleVariabile;
+                        dettaglioPrezzo = `Variabile: Indice(${indice}) + Spread(${spread}) = ${prezzoFinaleVariabile.toFixed(3)} €/kWh`;
+                    }
+
+                    const spesaStimataTotale = costoMateriaPrima + quotaFissa + oneriTrasportoStima;
+                    offerteList.push({ nome, spesaStimataTotale, dettaglioPrezzo, quotaFissa, spesaAttuale });
+                });
+
+            } else {
+                const consumoSmc = parseFloat(document.getElementById('gas-consumo').value) || 0;
+                const spesaAttuale = parseFloat(document.getElementById('gas-attuale').value) || 0;
+                const oneriTrasportoGas = consumoSmc * 0.22;
+
+                boxes.forEach(box => {
+                    const nome = box.querySelector('.off-nome').value || "Offerta Gas";
+                    const tipo = box.querySelector('.off-tipo').value;
+                    const quotaFissa = parseFloat(box.querySelector('.off-quota').value) || 0;
+
+                    let costoMateriaPrima = 0;
+                    let dettaglioPrezzo = "";
+
+                    if (tipo === 'fisso') {
+                        const p1 = parseFloat(box.querySelector('.off-p1').value) || 0;
+                        costoMateriaPrima = consumoSmc * p1;
+                        dettaglioPrezzo = `Fisso: ${p1} €/Smc`;
+                    } else {
+                        const indice = parseFloat(box.querySelector('.off-indice').value) || 0;
+                        const spread = parseFloat(box.querySelector('.off-spread').value) || 0;
+                        const prezzoFinaleVariabile = indice + spread;
+                        costoMateriaPrima = consumoSmc * prezzoFinaleVariabile;
+                        dettaglioPrezzo = `Variabile: PSV(${indice}) + Spread(${spread}) = ${prezzoFinaleVariabile.toFixed(3)} €/Smc`;
+                    }
+
+                    const spesaStimataTotale = costoMateriaPrima + quotaFissa + oneriTrasportoGas;
+                    offerteList.push({ nome, spesaStimataTotale, dettaglioPrezzo, quotaFissa, spesaAttuale });
+                });
+            }
+
+            offerteList.sort((a, b) => a.spesaStimataTotale - b.spesaStimataTotale);
+
+            offerteList.forEach((offerta, index) => {
+                const isBest = index === 0;
+                let risparmioHtml = '';
+
+                if (offerta.spesaAttuale > 0) {
+                    const tempDiff = offerta.spesaAttuale - offerta.spesaStimataTotale;
+                    if (tempDiff > 0) {
+                        risparmioHtml = `<br><span style="color: var(--success); font-weight: 600;">Risparmio stimato: +${tempDiff.toFixed(2)} €/anno</span>`;
+                    } else {
+                        risparmioHtml = `<br><span style="color: var(--error); font-weight: 600;">Più costosa di ${Math.abs(tempDiff).toFixed(2)} €/anno</span>`;
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = `result-card ${isBest ? 'best' : ''}`;
+                card.innerHTML = `
+                    ${isBest ? '<div class="badge-best">Miglior Scelta</div>' : ''}
+                    <div class="result-title">${offerta.nome}</div>
+                    <div class="result-details">
+                        ${offerta.dettaglioPrezzo}<br>
+                        Quota fissa: ${offerta.quotaFissa} €/anno (inclusi oneri stimati)
+                        ${risparmioHtml}
+                    </div>
+                    <div class="result-price">Stima bolletta: ~${offerta.spesaStimataTotale.toFixed(2)} €/anno</div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+
+            document.getElementById(`${type}-btn-pdf`).style.display = 'block';
+        }
+
+        function esportaPDF() {
+            window.print();
+        }
+
+        initOffers();
+    </script>
+</body>
+</html>

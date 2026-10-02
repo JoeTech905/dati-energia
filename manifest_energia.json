@@ -1,0 +1,15 @@
+{
+  "name": "Energia_Prezzi",
+  "short_name": "PrezziEnergia",
+  "start_url": "./energia_daily.html",
+  "display": "standalone",
+  "background_color": "#f4fbfb",
+  "theme_color": "#006874",
+  "icons": [
+    {
+      "src": "icona-energia.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
