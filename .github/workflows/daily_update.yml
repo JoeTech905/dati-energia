@@ -1,0 +1,47 @@
+name: Aggiornamento Giornaliero Prezzi Energia
+
+on:
+  schedule:
+    - cron: '30 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configura Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Installa BeautifulSoup
+        run: pip install beautifulsoup4
+
+      - name: Esegui Script
+        run: python aggiorna_energia_daily.py
+
+      - name: Salva Dati e Azzera Cronologia
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "bot@github.com"
+          
+          # Rileva automaticamente il nome del branch (es. main o master)
+          BRANCH=${GITHUB_REF##refs/heads/}
+          
+          # Crea un branch temporaneo slegato da tutta la cronologia passata
+          git checkout --orphan temp_branch
+          
+          # Aggiunge TUTTI i file presenti nella cartella (incluso il JSON aggiornato e l'HTML)
+          git add .
+          
+          # Crea un unico commit pulito
+          git commit -m "Aggiornamento giornaliero prezzi" || exit 0
+          
+          # Cancella il vecchio branch remoto e lo sostituisce con quello ripulito
+          git branch -D $BRANCH || true
+          git branch -m $BRANCH
+          git push -f origin $BRANCH
