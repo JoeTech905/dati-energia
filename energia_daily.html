@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Market Monitor</title>
+    
+    <!-- Configurazioni per PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1f2937">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --text-secondary: #6b7280;
+            --card-bg: #f8fafc;
+            --border-color: #e5e7eb;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --container-bg: #1f2937;
+            --text-color: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --card-bg: #374151;
+            --border-color: #4b5563;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            margin: 0; 
+            padding: 15px; 
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+            background: var(--container-bg); 
+            padding: 20px; 
+            border-radius: 14px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            transition: background-color 0.3s;
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        h1 { color: var(--text-color); font-size: 22px; margin: 0; }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        select, .theme-btn {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        select:hover, .theme-btn:hover {
+            border-color: #3b82f6;
+        }
+
+        .timestamp { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .stock-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            transition: transform 0.2s;
+        }
+        .stock-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .ticker-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        .ticker-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        /* Stile grafico del "bollino" colorato */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--container-bg);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 11px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .metric-value {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .motivation {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Colori dei badge (tema chiaro e scuro) */
+        .rialzista { background-color: #d1fae5; color: #065f46; }
+        .ribassista { background-color: #fee2e2; color: #991b1b; }
+        .ipervenduto { background-color: #e0f2fe; color: #0369a1; }
+        .ipercomprato { background-color: #fef3c7; color: #92400e; }
+        .neutro { background-color: #f3f4f6; color: #374151; }
+
+        [data-theme="dark"] .rialzista { background-color: #064e3b; color: #6ee7b7; }
+        [data-theme="dark"] .ribassista { background-color: #7f1d1d; color: #fca5a5; }
+        [data-theme="dark"] .ipervenduto { background-color: #0c4a6e; color: #7dd3fc; }
+        [data-theme="dark"] .ipercomprato { background-color: #78350f; color: #fde047; }
+        [data-theme="dark"] .neutro { background-color: #374151; color: #d1d5db; }
+
+        .loading-msg, .error-msg {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .error-msg { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-flex">
+            <h1>📊 Smart Market Monitor</h1>
+            <div class="controls">
+                <select id="market-select" onchange="caricaDati()">
+                    <option value="dati_ftsemib.json">🇮🇹 FTSE MIB</option>
+                    <option value="dati_sp500.json">🇺🇸 S&P 500</option>
+                    <option value="dati_nasdaq.json">⚡ Nasdaq 100</option>
+                </select>
+                <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+        </div>
+        <div class="timestamp" id="update-time">Caricamento timestamp...</div>
+        
+        <div id="cards-container" class="cards-grid">
+            <div class="loading-msg">Caricamento dati in corso...</div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const btn = document.getElementById('theme-toggle');
+            
+            if (currentTheme === 'dark') {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                btn.innerText = '🌙';
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                btn.innerText = '☀️';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const btn = document.getElementById('theme-toggle');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                btn.innerText = '☀️';
+            }
+            caricaDati();
+        });
+
+        async function caricaDati() {
+            const select = document.getElementById('market-select');
+            const fileJson = select.value;
+            const nomeMercato = select.options[select.selectedIndex].text;
+            
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '<div class="loading-msg">Caricamento dati in corso...</div>';
+
+            try {
+                const response = await fetch(fileJson);
+                if (!response.ok) throw new Error("File non trovato");
+                const data = await response.json();
+                
+                document.getElementById('update-time').innerText = "Ultimo aggiornamento (" + nomeMercato + "): " + data.ultimo_aggiornamento;
+                
+                container.innerHTML = '';
+                
+                if (!data.dati || data.dati.length === 0) {
+                    container.innerHTML = '<div class="loading-msg">Nessun dato disponibile al momento.</div>';
+                    return;
+                }
+
+                data.dati.forEach(item => {
+                    let badgeClass = 'neutro';
+                    let segnaleUpper = item.segnale.toUpperCase();
+                    
+                    if (segnaleUpper.includes('RIALZISTA')) badgeClass = 'rialzista';
+                    else if (segnaleUpper.includes('RIBASSISTA')) badgeClass = 'ribassista';
+                    else if (segnaleUpper.includes('IPERVENDUTO')) badgeClass = 'ipervenduto';
+                    else if (segnaleUpper.includes('IPERCOMPRATO')) badgeClass = 'ipercomprato';
+
+                    const card = `
+                        <div class="stock-card">
+                            <div class="card-header">
+                                <span class="ticker-name">${item.ticker}</span>
+                                <span class="ticker-price">${item.prezzo} <small style="font-size:11px; color:var(--text-secondary);">Prezzo</small></span>
+                            </div>
+                            
+                            <div><span class="badge ${badgeClass}">${item.segnale}</span></div>
+
+                            <div class="metrics-grid">
+                                <div>
+                                    <span class="metric-label">SMA 20</span>
+                                    <span class="metric-value">${item.sma_20}</span>
+                                </div>
+                                <div>
+                                    <span class="metric-label">SMA 50</span>
+                                    <span class="metric-value">${item.sma_50}</span>
+                                </div>
+                                <div>
+                                    <span class="metric-label">RSI (14)</span>
+                                    <span class="metric-value">${item.rsi}</span>
+                                </div>
+                            </div>
+
+                            <div class="motivation">💡 ${item.motivazione}</div>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            } catch (error) {
+                container.innerHTML = '<div class="error-msg">Impossibile caricare i dati. Esegui prima l\'azione di aggiornamento su GitHub Actions.</div>';
+                document.getElementById('update-time').innerText = "Errore di caricamento.";
+            }
+        }
+    </script>
+</body>
+</html>
