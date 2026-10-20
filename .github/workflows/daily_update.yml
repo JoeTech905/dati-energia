@@ -1,47 +1,38 @@
-name: Aggiornamento Giornaliero Prezzi Energia
+name: Aggiorna Energia Daily
 
 on:
   schedule:
-    - cron: '00 21 * * *'
+    - cron: '0 8 * * *' # Si attiva ogni giorno (puoi modificare l'orario)
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  aggiorna-energia:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Scarica il codice del repository
+        uses: actions/checkout@v4
 
       - name: Configura Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.10'
 
-      - name: Installa BeautifulSoup
-        run: pip install beautifulsoup4
+      # 🔴 QUESTA PARTE MANCAVA O ERA ERRATA:
+      - name: Installa le librerie necessarie
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas requests lxml html5lib
 
-      - name: Esegui Script
+      - name: Esegui lo script di energia
         run: python aggiorna_energia_daily.py
 
-      - name: Salva Dati e Azzera Cronologia
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit e push dei file aggiornati su GitHub
         run: |
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "bot@github.com"
-          
-          # Rileva automaticamente il nome del branch (es. main o master)
-          BRANCH=${GITHUB_REF##refs/heads/}
-          
-          # Crea un branch temporaneo slegato da tutta la cronologia passata
-          git checkout --orphan temp_branch
-          
-          # Aggiunge TUTTI i file presenti nella cartella (incluso il JSON aggiornato e l'HTML)
-          git add .
-          
-          # Crea un unico commit pulito
-          git commit -m "Aggiornamento giornaliero prezzi" || exit 0
-          
-          # Cancella il vecchio branch remoto e lo sostituisce con quello ripulito
-          git branch -D $BRANCH || true
-          git branch -m $BRANCH
-          git push -f origin $BRANCH
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add dati_energia_daily.json
+          git diff --staged --quiet || git commit -m "Aggiornamento automatico dati energia [skip ci]"
+          git push
