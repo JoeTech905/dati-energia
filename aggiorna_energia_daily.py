@@ -1,107 +1,175 @@
-import urllib.request
-import json
 from datetime import datetime
-import os
-import re
-from bs4 import BeautifulSoup
+import json
+import pandas as pd
+import yfinance as yf
 
-NOME_FILE_JSON = "dati_energia_daily.json"
 
-def scarica_da_energyindex():
-    pun_trovato = None
-    psv_trovato = None
+def scarica_ticker_ftse_mib():
+  """Scarica il FTSE MIB da Wikipedia con fallback di sicurezza"""
+  try:
+    url = "https://it.wikipedia.org/wiki/FTSE_MIB"
+    tabelle = pd.read_html(url)
+    df = tabelle[0]
+    colonna = [c for c in df.columns if "Ticker" in c or "Simbolo" in c or "Quotazione" in c]
+    simboli = df[colonna[0]].dropna().tolist() if colonna else df.iloc[:, 0].dropna().tolist()
+    tickers = [s if ".MI" in str(s) else f"{str(s).strip()}.MI" for s in simboli]
+    if len(tickers) > 5:
+      return tickers
+  except Exception:
+    pass
+  
+  print("Uso lista di fallback per FTSE MIB.")
+  return ["ENEL.MI", "ENI.MI", "UCG.MI", "ISP.MI", "STLA.MI", "RACE.MI", "G.MI", "MB.MI", "CPR.MI", "HER.MI"]
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
-    }
 
-    url_bersaglio = "https://www.energyindex.it/"
+def scarica_ticker_sp500():
+  """Scarica l'S&P 500 da Wikipedia con fallback di sicurezza"""
+  try:
+    url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+    tabelle = pd.read_html(url)
+    df = tabelle[0]
+    simboli = df["Symbol"].dropna().tolist()
+    tickers = [str(s).replace(".", "-").strip() for s in simboli]
+    if len(tickers) > 50:
+      return tickers
+  except Exception:
+    pass
+  
+  print("Uso lista di fallback per S&P 500.")
+  return ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "BRK-B", "JPM", "V", "JNJ", "WMT", "UNH", "XOM", "MA"]
 
+
+def scarica_ticker_nasdaq():
+  """Scarica il Nasdaq-100 da Wikipedia con fallback di sicurezza"""
+  try:
+    url = "https://en.wikipedia.org/wiki/NASDAQ-100"
+    tabelle = pd.read_html(url)
+    df = None
+    for tab in tabelle:
+      if "Ticker" in tab.columns or "Symbol" in tab.columns:
+        df = tab
+        break
+    if df is None:
+      df = tabelle[3]
+    colonna = [c for c in df.columns if "Ticker" in c or "Symbol" in c]
+    simboli = df[colonna[0]].dropna().tolist() if colonna else df.iloc[:, 1].dropna().tolist()
+    tickers = [str(s).replace(".", "-").strip() for s in simboli]
+    if len(tickers) > 20:
+      return tickers
+  except Exception:
+    pass
+  
+  print("Uso lista di fallback per Nasdaq-100.")
+  return ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "AVGO", "COST", "NFLX", "AMD", "PEP", "ADBE", "CSCO", "TMUS", "INTC"]
+
+
+def analizza_e_salva_mercato(nome_file, lista_ticker):
+  if not lista_ticker:
+    print(f"Nessun ticker trovato per {nome_file}")
+    return
+
+  print(f"\nInizio scansione di {len(lista_ticker)} titoli per {nome_file}...")
+  
+  # ----------------------------------------------------
+  # MODIFICA QUI: Cambia il numero di risultati desiderati
+  # ----------------------------------------------------
+  top_n = 10  
+  
+  risultati_screening = []
+
+  # FASE 1: Screening rapido su tutti i titoli
+  for ticker in lista_ticker:
     try:
-        req = urllib.request.Request(url_bersaglio, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as response:
-            html_content = response.read().decode('utf-8')
-            soup = BeautifulSoup(html_content, 'html.parser')
-            
-            # --- PUN ---
-            elem_kwh = soup.find(string=re.compile('€/kWh', re.IGNORECASE))
-            if elem_kwh:
-                parent = elem_kwh.find_parent(['div', 'section', 'article', 'p', 'span'])
-                text_block = parent.get_text() if parent else elem_kwh
-                match = re.search(r'([0-1][,\.]\d{4})', text_block)
-                if match:
-                    pun_trovato = round(float(match.group(1).replace(',', '.')), 5)
+      df = yf.download(ticker, period="3mo", interval="1d", progress=False)
+      if df.empty or len(df) < 20:
+        continue
 
-            # --- PSV ---
-            elem_smc = soup.find(string=re.compile('€/Smc', re.IGNORECASE))
-            if elem_smc:
-                parent = elem_smc.find_parent(['div', 'section', 'article', 'p', 'span'])
-                text_block = parent.get_text() if parent else elem_smc
-                match = re.search(r'([0-2][,\.]\d{4})', text_block)
-                if match:
-                    psv_trovato = round(float(match.group(1).replace(',', '.')), 5)
+      close = df["Close"].iloc[:, 0] if isinstance(df.columns, pd.MultiIndex) else df["Close"]
 
-    except Exception as e:
-        print(f"Avviso durante lo scraping: {e}")
+      prezzo_attuale = float(close.iloc[-1])
+      prezzo_passato = float(close.iloc[-20])
+      rendimento_pct = ((prezzo_attuale - prezzo_passato) / prezzo_passato) * 100
 
-    if not pun_trovato: pun_trovato = 0.2384  
-    if not psv_trovato: psv_trovato = 0.8509  
+      delta = close.diff()
+      gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+      loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+      rs = gain / loss
+      rsi = float((100 - (100 / (1 + rs))).iloc[-1])
 
-    return pun_trovato, psv_trovato
+      risultati_screening.append({
+          "Ticker": ticker, 
+          "Rend_1M": rendimento_pct, 
+          "RSI_raw": rsi
+      })
+    except Exception:
+      continue
 
-def aggiorna_dati_json():
-    oggi = datetime.now()
-    oggi_str = oggi.strftime("%d/%m/%Y %H:%M")
-    chiave_mese = oggi.strftime("%Y-%m") # E es: "2026-09"
-    giorno_corrente = oggi.strftime("%d")
-    
-    pun_nuovo, psv_nuovo = scarica_da_energyindex()
+  if not risultati_screening:
+    print(f"Nessun dato valido estratto per {nome_file}.")
+    return
 
-    data = {"ultimo_aggiornamento": oggi_str, "storico_mesi": {}}
-    if os.path.exists(NOME_FILE_JSON):
-        try:
-            with open(NOME_FILE_JSON, 'r', encoding='utf-8') as f:
-                contenuto = json.load(f)
-                if "storico_mesi" in contenuto:
-                    data["storico_mesi"] = contenuto["storico_mesi"]
-                elif "mese_corrente" in contenuto:
-                    # Retrocompatibilità se c'era il vecchio formato
-                    data["storico_mesi"][chiave_mese] = contenuto["mese_corrente"]
-        except Exception as e:
-            print(f"Errore lettura JSON: {e}")
+  # FASE 2: Selezione dei migliori (escludendo ipercomprato estremo RSI >= 75)
+  df_screen = pd.DataFrame(risultati_screening)
+  df_screen = df_screen.sort_values(by="Rend_1M", ascending=False)
+  df_filtrati = df_screen[df_screen["RSI_raw"] < 75].head(top_n)
+  migliori_ticker = df_filtrati["Ticker"].tolist()
 
-    if chiave_mese not in data["storico_mesi"]:
-        data["storico_mesi"][chiave_mese] = {
-            "giorni": [],
-            "pun_giornaliero": [],
-            "psv_giornaliero": []
-        }
+  print(f"-> I {top_n} titoli migliori trovati per {nome_file}: {migliori_ticker}")
 
-    mese = data["storico_mesi"][chiave_mese]
-    if giorno_corrente in mese["giorni"]:
-        indice = mese["giorni"].index(giorno_corrente)
-        mese["pun_giornaliero"][indice] = pun_nuovo
-        mese["psv_giornaliero"][indice] = psv_nuovo
-    else:
-        mese["giorni"].append(giorno_corrente)
-        mese["pun_giornaliero"].append(pun_nuovo)
-        mese["psv_giornaliero"].append(psv_nuovo)
-
-    # Calcolo medie
-    if len(mese["pun_giornaliero"]) > 0:
-        mese["media_pun_attuale"] = round(sum(mese["pun_giornaliero"]) / len(mese["pun_giornaliero"]), 5)
-        mese["media_psv_attuale"] = round(sum(mese["psv_giornaliero"]) / len(mese["psv_giornaliero"]), 5)
-
-    data["ultimo_aggiornamento"] = oggi_str
-
+  # FASE 3: Analisi tecnica approfondita sui vincitori
+  risultati_finali = []
+  for ticker in migliori_ticker:
     try:
-        with open(NOME_FILE_JSON, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-        print("File JSON aggiornato con successo.")
+      df = yf.download(ticker, period="6mo", interval="1d", progress=False)
+      close = df["Close"].iloc[:, 0] if isinstance(df.columns, pd.MultiIndex) else df["Close"]
+
+      ultimo_prezzo = float(close.iloc[-1])
+      sma_20 = float(close.rolling(window=20).mean().iloc[-1])
+      sma_50 = float(close.rolling(window=50).mean().iloc[-1])
+
+      delta = close.diff()
+      gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+      loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+      rsi = float((100 - (100 / (1 + (gain / loss)))).iloc[-1])
+
+      segnale = "Neutro"
+      motivo = "Trend laterale o fase di transizione."
+      if sma_20 > sma_50 and rsi < 70:
+        segnale = "Rialzista (Buy/Accumulo)"
+        motivo = "Medie mobili a favore e RSI equilibrato."
+      elif sma_20 < sma_50 and rsi > 30:
+        segnale = "Ribassista (Prudenza)"
+        motivo = "Trend di medio periodo debole."
+      elif rsi <= 30:
+        segnale = "Ipervenduto (Possibile Rimbalzo)"
+        motivo = "Prezzo tirato molto al ribasso, potenziale occasione."
+      elif rsi >= 70:
+        segnale = "Ipercomprato (Attenzione)"
+        motivo = "Il titolo ha corso molto, rischio storno."
+
+      risultati_finali.append({
+          "ticker": ticker,
+          "prezzo": round(ultimo_prezzo, 2),
+          "sma_20": round(sma_20, 2),
+          "sma_50": round(sma_50, 2),
+          "rsi": round(rsi, 2),
+          "segnale": segnale,
+          "motivazione": motivo,
+      })
     except Exception as e:
-        print(f"Errore salvataggio JSON: {e}")
+      print(f"Errore nell'analisi tecnica di {ticker}: {e}")
+
+  payload = {
+      "ultimo_aggiornamento": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+      "dati": risultati_finali,
+  }
+
+  with open(nome_file, "w", encoding="utf-8") as f:
+    json.dump(payload, f, ensure_ascii=False, indent=4)
+  print(f"File {nome_file} generato con successo.")
+
 
 if __name__ == "__main__":
-    aggiorna_dati_json()
+  analizza_e_salva_mercato("dati_ftsemib.json", scarica_ticker_ftse_mib())
+  analizza_e_salva_mercato("dati_sp500.json", scarica_ticker_sp500())
+  analizza_e_salva_mercato("dati_nasdaq.json", scarica_ticker_nasdaq())
