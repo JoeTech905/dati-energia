@@ -1,7 +1,7 @@
 on:
   schedule:
     # Esegue ogni giorno alle 21:30 ora italiana (19:30 UTC)
-    - cron: '00 19 * * *'
+    - cron: '00 21 * * *'
   
   # Ti permette comunque di fare un test manuale quando vuoi dalla pagina di GitHub
   workflow_dispatch: 
