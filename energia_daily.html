@@ -420,10 +420,13 @@
             <div class="card">
                 <div class="card-header-flex">
                     <h2>Andamento Storico (PUN & PSV)</h2>
-                    <select id="storico-view-select" class="select-view">
-                        <option value="mensile" selected>Vista: Medie Mensili</option>
-                        <option value="giornaliero">Vista: Dettaglio Giornaliero</option>
-                    </select>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <select id="storico-mese-select" class="select-view" style="display: none;"></select>
+                        <select id="storico-view-select" class="select-view">
+                            <option value="mensile" selected>Vista: Medie Mensili</option>
+                            <option value="giornaliero">Vista: Dettaglio Giornaliero</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="chart-container">
                     <canvas id="historicalLineChart"></canvas>
@@ -531,6 +534,7 @@
 
         const toggleButton = document.getElementById('theme-toggle');
         const viewSelect = document.getElementById('storico-view-select');
+        const meseSelectElem = document.getElementById('storico-mese-select');
         const bodyElement = document.body;
 
         if (localStorage.getItem('theme') === 'dark') {
@@ -547,6 +551,10 @@
         });
 
         viewSelect.addEventListener('change', () => {
+            if (window.cachedFullData) aggiornaDashboard(window.cachedFullData);
+        });
+
+        meseSelectElem.addEventListener('change', () => {
             if (window.cachedFullData) aggiornaDashboard(window.cachedFullData);
         });
 
@@ -657,7 +665,35 @@
             let datiPsvAnno = [];
             const tipoVista = viewSelect.value;
 
-            if (tipoVista === 'mensile') {
+            if (tipoVista === 'giornaliero') {
+                meseSelectElem.style.display = 'block';
+                
+                if (meseSelectElem.options.length === 0) {
+                    mesiKeys.slice().reverse().forEach(chiave => {
+                        const [anno, mese] = chiave.split('-');
+                        const opt = document.createElement('option');
+                        opt.value = chiave;
+                        opt.textContent = `${mese}/${anno}`;
+                        meseSelectElem.appendChild(opt);
+                    });
+                    meseSelectElem.value = chiaveMeseCorrente;
+                }
+
+                const meseSelezionatoKey = meseSelectElem.value || chiaveMeseCorrente;
+                const mSelezionato = storicoMesi[meseSelezionatoKey] || meseCorrente;
+                const giorniMese = mSelezionato.giorni || [];
+                const pArrMese = mSelezionato.pun_giornaliero || [];
+                const sArrMese = mSelezionato.psv_giornaliero || [];
+
+                giorniMese.forEach((g, idx) => {
+                    labelsAnno.push(`${g}/${meseSelezionatoKey.split('-')[1]}`);
+                    datiPunAnno.push(pArrMese[idx] !== undefined ? Number(pArrMese[idx].toFixed(4)) : 0);
+                    datiPsvAnno.push(sArrMese[idx] !== undefined ? Number(sArrMese[idx].toFixed(4)) : 0);
+                });
+
+            } else {
+                meseSelectElem.style.display = 'none';
+                
                 mesiKeys.forEach(chiave => {
                     const m = storicoMesi[chiave];
                     const pArr = m.pun_giornaliero || [];
@@ -671,17 +707,6 @@
                         labelsAnno.push(`${mese}/${anno}`);
                         datiPunAnno.push(Number(mPun.toFixed(4)));
                         datiPsvAnno.push(Number(mPsv.toFixed(4)));
-                    }
-                });
-            } else {
-                mesiKeys.forEach(chiave => {
-                    const m = storicoMesi[chiave];
-                    if (m.giorni && m.pun_giornaliero) {
-                        m.giorni.forEach((g, idx) => {
-                            labelsAnno.push(`${g}/${chiave.split('-')[1]}`);
-                            datiPunAnno.push(m.pun_giornaliero[idx]);
-                            datiPsvAnno.push(m.psv_giornaliero[idx]);
-                        });
                     }
                 });
             }
