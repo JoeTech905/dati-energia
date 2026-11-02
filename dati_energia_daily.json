@@ -1,5 +1,5 @@
 {
-    "ultimo_aggiornamento": "31/10/2026 23:57",
+    "ultimo_aggiornamento": "02/11/2026 00:17",
     "storico_mesi": {
         "2025-09": {
             "media_pun_attuale": 0.1122,
@@ -305,6 +305,19 @@
             ],
             "media_pun_attuale": 0.21995,
             "media_psv_attuale": 0.92791
+        },
+        "2026-11": {
+            "giorni": [
+                "02"
+            ],
+            "pun_giornaliero": [
+                0.2652
+            ],
+            "psv_giornaliero": [
+                1.0969
+            ],
+            "media_pun_attuale": 0.2652,
+            "media_psv_attuale": 1.0969
         }
     }
 }
