@@ -1,5 +1,5 @@
 {
-    "ultimo_aggiornamento": "27/11/2026 03:30",
+    "ultimo_aggiornamento": "28/11/2026 03:06",
     "storico_mesi": {
         "2025-09": {
             "media_pun_attuale": 0.1122,
@@ -333,7 +333,8 @@
                 "24",
                 "25",
                 "26",
-                "27"
+                "27",
+                "28"
             ],
             "pun_giornaliero": [
                 0.2652,
@@ -361,7 +362,8 @@
                 0.2258,
                 0.2497,
                 0.2582,
-                0.2774
+                0.2774,
+                0.2876
             ],
             "psv_giornaliero": [
                 1.0969,
@@ -389,10 +391,11 @@
                 0.9406,
                 0.9914,
                 1.0024,
-                0.9665
+                0.9665,
+                0.9779
             ],
-            "media_pun_attuale": 0.25041,
-            "media_psv_attuale": 0.95452
+            "media_pun_attuale": 0.25179,
+            "media_psv_attuale": 0.95538
         }
     }
 }
